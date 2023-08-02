@@ -3,6 +3,7 @@ package View;
 import javax.swing.*;
 
 import Model.*;
+import Controller.VMController;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -17,7 +18,7 @@ public class MaintenanceView extends JPanel {
 
     public MaintenanceView() {
         setLayout(new BorderLayout());
-
+        vendingMachine.initializeSlots();
         // Panel 1: Uneditable Text Field
         JPanel displayAmountPanel = createTotalAmountPanel();
         displayAmountPanel.setBorder(BorderFactory.createTitledBorder("Uneditable Text Field"));
@@ -139,80 +140,114 @@ public class MaintenanceView extends JPanel {
             // Handle button click action here
             JButton button = (JButton) e.getSource();
             String buttonText = button.getText();
-            int index = Integer.parseInt(buttonText) - 1;
+            try {
+                int intIndex = Integer.parseInt(buttonText);
+                if (intIndex >= 0 && intIndex <= 9) {
+                    // Customize the JOptionPane options
+                    Object[] options = { "Add Item", "Close" };
+                    int choice = JOptionPane.showOptionDialog(null,
+                            "Button clicked: " + buttonText,
+                            "Button Clicked",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            null,
+                            options,
+                            options[0]);
 
-            // Customize the JOptionPane options
-            Object[] options = { "Add Item", "Close" };
-            int choice = JOptionPane.showOptionDialog(null,
-                    "Button clicked: " + buttonText,
-                    "Button Clicked",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
+                    if (choice == JOptionPane.YES_OPTION) {
+                        // If "Add Item" is clicked, show another JOptionPane to get item details
+                        JPanel panel = new JPanel(new GridLayout(4, 2));
+                        panel.add(new JLabel("Name:"));
+                        JTextField nameField = new JTextField(15);
+                        panel.add(nameField);
 
-            if (choice == JOptionPane.YES_OPTION) {
-                // If "Add Item" is clicked, show another JOptionPane to get item details
-                JPanel panel = new JPanel(new GridLayout(4, 2));
-                panel.add(new JLabel("Name:"));
-                JTextField nameField = new JTextField(15);
-                panel.add(nameField);
+                        panel.add(new JLabel("Price:"));
+                        JTextField priceField = new JTextField(15);
+                        panel.add(priceField);
 
-                panel.add(new JLabel("Price:"));
-                JTextField priceField = new JTextField(15);
-                panel.add(priceField);
+                        panel.add(new JLabel("Calories:"));
+                        JTextField caloriesField = new JTextField(15);
+                        panel.add(caloriesField);
 
-                panel.add(new JLabel("Calories:"));
-                JTextField caloriesField = new JTextField(15);
-                panel.add(caloriesField);
+                        panel.add(new JLabel("Stock:"));
+                        JTextField stockField = new JTextField(15);
+                        panel.add(stockField);
 
-                panel.add(new JLabel("Stock:"));
-                JTextField stockField = new JTextField(15);
-                panel.add(stockField);
+                        int result = JOptionPane.showConfirmDialog(null, panel, "Enter Item Details",
+                                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-                int result = JOptionPane.showConfirmDialog(null, panel, "Enter Item Details",
-                        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                        if (result == JOptionPane.OK_OPTION) {
+                            // Process the entered item details here
+                            String name = nameField.getText();
+                            double price = 0.0;
+                            double calories = 0.0;
+                            int stock = 0;
 
-                if (result == JOptionPane.OK_OPTION) {
-                    // Process the entered item details here
-                    String name = nameField.getText();
-                    double price = 0.0;
-                    double calories = 0.0;
-                    int stock = 0;
+                            try {
+                                price = Double.parseDouble(priceField.getText());
+                                calories = Double.parseDouble(caloriesField.getText());
+                                stock = Integer.parseInt(stockField.getText());
+                            } catch (NumberFormatException ex) {
+                                JOptionPane.showMessageDialog(null,
+                                        "Invalid input. Please enter valid numbers for price, calories, and stock.",
+                                        "Error", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
 
-                    try {
-                        price = Double.parseDouble(priceField.getText());
-                        calories = Double.parseDouble(caloriesField.getText());
-                        stock = Integer.parseInt(stockField.getText());
-                    } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(null,
-                                "Invalid input. Please enter valid numbers for price, calories, and stock.",
-                                "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
+                            // Here you can use the name, price, calories, and stock variables as needed //
+                            // update
+
+                            ItemModel tempItem = new ItemModel(name, price, calories);
+                            vendingMachine.getItemSlot().get(intIndex - 1).setItem(tempItem);
+                            // Update the button text to the item name
+                            button.setText(name);
+                        }
                     }
+                }
+            } catch (NumberFormatException ex) {
+                String[] options2 = { "Restock Item", "Reprice Item", "Cancel" };
 
-                    try {
-                        price = Double.parseDouble(priceField.getText());
-                        calories = Double.parseDouble(caloriesField.getText());
-                        stock = Integer.parseInt(stockField.getText());
-                    } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(null,
-                                "Invalid input. Please enter valid numbers for price, calories, and stock.",
-                                "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
+                // Show the option dialog
+                int choice2 = JOptionPane.showOptionDialog(null,
+                        "Please select an option:",
+                        "Three Options",
+                        JOptionPane.YES_NO_CANCEL_OPTION, // Specify the option type
+                        JOptionPane.QUESTION_MESSAGE, // Specify the message type
+                        null, // Use the default icon
+                        options2, // Provide the option buttons
+                        options2[0]); // Set the default option (Optional)
+
+                // Handle the user's choice
+                if (choice2 == JOptionPane.YES_OPTION) {
+                    JPanel panel2 = new JPanel(new GridLayout(4, 2));
+                    panel2.add(new JLabel("Restock:"));
+                    JTextField stockField = new JTextField(15);
+                    panel2.add(stockField);
+
+                    int result = JOptionPane.showConfirmDialog(null, panel2, "Restock Item",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                    if (result == JOptionPane.OK_OPTION) {
+                        // Process the entered restock value here
+                        // ...
                     }
+                } else if (choice2 == JOptionPane.NO_OPTION) {
+                    JPanel panel3 = new JPanel(new GridLayout(4, 2));
+                    panel3.add(new JLabel("New Price:"));
+                    JTextField priceField = new JTextField(15);
+                    panel3.add(priceField);
 
-                    // Here you can use the name, price, calories, and stock variables as needed //
-                    // update
-                    ItemModel tempItem = new ItemModel(name, price, calories);
-                    vendingMachine.getItemSlot().get(index).setItem(tempItem);
+                    int result = JOptionPane.showConfirmDialog(null, panel3, "Reprice Item",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-                    // Update the button text to the item name
-                    button.setText(name);
+                    if (result == JOptionPane.OK_OPTION) {
+                        // Process the entered new price value here
+                        // ...
+
+                    }
                 }
             }
         }
-    }
 
+    }
 }

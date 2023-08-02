@@ -1,6 +1,7 @@
 package View;
 
 import Controller.*;
+import Model.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,9 +12,11 @@ public class MainFrame extends JFrame {
     private CardLayout cardLayout;
 
     public MainFrame() {
+
         super("ICE ICE BaBY");
         cardLayout = new CardLayout();
         MainMenu menu = new MainMenu();
+        VendingMachine vendingMachine = new VendingMachine();
         VendingMachineView vendingVMView = new VendingMachineView();
         MaintenanceView maintenanceVM = new MaintenanceView();
 

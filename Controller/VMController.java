@@ -22,6 +22,7 @@ public class VMController {
 
     public VMController(MainMenu menu, VendingMachineView vendingVMView, MaintenanceView maintenanceVM) {
         this.menu = menu;
+        this.vendingMachine = new VendingMachine();
         this.vendingVMView = vendingVMView;
         this.maintenanceVM = maintenanceVM;
 
@@ -93,6 +94,19 @@ public class VMController {
             }
         });
 
+        this.maintenanceVM.backButton(e -> {
+            JButton button = (JButton) e.getSource();
+            String buttonLabel = button.getText();
+            if (buttonLabel.equals("Cancel")) {
+                maintenanceVM.setVisible(false);
+                menu.setVisible(true);
+            }
+        });
+
+    }
+
+    public VendingMachine getVendingMachine() {
+        return this.vendingMachine;
     }
 
 }
