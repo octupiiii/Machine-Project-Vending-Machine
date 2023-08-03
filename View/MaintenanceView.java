@@ -1,6 +1,7 @@
 package View;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 import Model.*;
 import Controller.*;
@@ -14,18 +15,31 @@ public class MaintenanceView extends JPanel {
 
     private VendingMachine vendingMachine;
     private JButton backButton;
+    private JButton displaySummaryButton;
     private JTextField totalAmountField;
     private double totalAmount = 0.0;
     private ItemModel[] tempSlots;
+    private JPanel moneyDenominationsPanel; 
 
     public MaintenanceView(VendingMachine vendingMachine) {
         setLayout(new BorderLayout());
         this.vendingMachine = vendingMachine;
         this.tempSlots = new ItemModel[9];
+        vendingMachine.initializeMoney();
+        totalAmount = vendingMachine.getTotalPaymentAmount();
+
+        // Create the totalAmountField before using it in createTotalAmountPanel
+    totalAmountField = new JTextField("Total Amount: PHP 0.00", 15);
+    totalAmountField.setEditable(false);
+
+    // Create the panel to show money denominations and the total amount
+    // JPanel moneyDenominationsPanel = createMoneyDenominationsPanel();
+    // moneyDenominationsPanel.setBorder(BorderFactory.createTitledBorder("Money Denominations"));
+    // add(moneyDenominationsPanel, BorderLayout.NORTH);
 
         // Panel 1: Uneditable Text Field
         JPanel displayAmountPanel = createTotalAmountPanel();
-        displayAmountPanel.setBorder(BorderFactory.createTitledBorder("Uneditable Text Field"));
+        displayAmountPanel.setBorder(BorderFactory.createTitledBorder("Available Cash"));
         add(displayAmountPanel, BorderLayout.NORTH);
 
         // Panel 2: Main Panel (for Buttons)
@@ -33,12 +47,12 @@ public class MaintenanceView extends JPanel {
 
         // Panel 2.1: Add buttons
         JPanel panel1 = createPanelWithButtons();
-        panel1.setBorder(BorderFactory.createTitledBorder("Choose a Product"));
+        panel1.setBorder(BorderFactory.createTitledBorder("Vending Machine Available Products"));
         mainPanel.add(panel1, BorderLayout.CENTER);
 
         // Panel 2.2: Money buttons
         JPanel panel2 = createMoneyButtons();
-        panel2.setBorder(BorderFactory.createTitledBorder("Insert Money"));
+        panel2.setBorder(BorderFactory.createTitledBorder("Insert and Withdraw Money"));
         mainPanel.add(panel2, BorderLayout.EAST);
 
         add(mainPanel, BorderLayout.CENTER);
@@ -48,11 +62,50 @@ public class MaintenanceView extends JPanel {
         backButton = new JButton("Cancel"); // Use the class-level backButton variable
         blackPanel.add(backButton); // Add the backButton to the blackPanel
         add(blackPanel, BorderLayout.SOUTH);
+
+        // display
+        displaySummaryButton = new JButton("Display Summary of Transactions");
+        blackPanel.add(displaySummaryButton); // Add the button to the blackPanel
+        // action listener for summary button
+        displaySummaryButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Show options in a pop-up dialog
+                String[] options = { "Show Summary of Transactions", "Show Starting Inventory", "Show Ending Inventory" };
+                int choice = JOptionPane.showOptionDialog(null,
+                        "Please select an option:\n",
+                        "Display Summary of Transactions",
+                        JOptionPane.YES_NO_CANCEL_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
+    
+                // Handle the user's choice
+                if (choice == JOptionPane.YES_OPTION) {
+                    String summary = generateTransactionSummary();
+                    showTransactionSummary(summary);
+                } else if (choice == JOptionPane.NO_OPTION) {
+                    String startingInventory = generateStartingInventory();
+                    showStartingInventory(startingInventory);
+                } else if (choice == JOptionPane.CANCEL_OPTION) {
+                    String currentInventory = generateCurrentInventory();
+                    showCurrentInventory(currentInventory);
+                }
+            }
+        });
+
+
+        // Panel 4: Money Denominations Panel
+        moneyDenominationsPanel = createMoneyDenominationsPanel();
+        moneyDenominationsPanel.setBorder(BorderFactory.createTitledBorder("Money Denominations"));
+        add(moneyDenominationsPanel, BorderLayout.NORTH); // Add the money denominations panel to the top side
+
     }
 
     private JPanel createUneditableTextPanel() {
         JPanel panel = new JPanel();
-        JTextField textField = new JTextField("This is an uneditable text field", 20);
+        JTextField textField = new JTextField("Total Amount: " + totalAmount, 20);
         textField.setEditable(false);
         panel.add(textField);
         return panel;
@@ -81,62 +134,219 @@ public class MaintenanceView extends JPanel {
         panel.setLayout(new GridLayout(2, 5));
 
         // Add 10 money buttons to the panel with specific denominations
-        double[] denominations = { 0.25, 1, 5, 10, 20, 50, 100, 200, 500, 1000 };
-        for (double denomination : denominations) {
-            String buttonText = String.format("$%.2f", denomination);
+        for (DenominationModel denomination : vendingMachine.getAvailableCash()) {
+            double currency = denomination.getCurrency();
+            String buttonText = String.format("PHP %.2f", currency);
             JButton button = new JButton(buttonText);
-            button.addActionListener(new MoneyButtonActionListener(denomination));
+            button.addActionListener(new MoneyButtonActionListener(currency, denomination));
             panel.add(button);
         }
 
         return panel;
     }
 
+    
+
     private class MoneyButtonActionListener implements ActionListener {
         private final double denomination;
+        private final DenominationModel denominationModel;
 
-        public MoneyButtonActionListener(double denomination) {
+        public MoneyButtonActionListener(double denomination, DenominationModel denominationModel) {
             this.denomination = denomination;
+            this.denominationModel = denominationModel;
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            // Handle money button click action here
-            String buttonText = String.format("$%.2f", denomination);
 
-            // Customize the JOptionPane options
-            Object[] options = { "Add Item", "Close" };
-            int choice = JOptionPane.showOptionDialog(null,
-                    "Money button clicked: " + buttonText,
-                    "Money Button Clicked",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
-
-            if (choice == JOptionPane.YES_OPTION) {
-                // update Total amount
-                totalAmount += denomination;
-                // If "Add Item" is clicked, show another JOptionPane to inform the user
-                JOptionPane.showMessageDialog(null, "Item added with denomination: " + buttonText, "Item Added",
-                        JOptionPane.INFORMATION_MESSAGE);
-                totalAmountField.setText("Total Amount: PHP " + String.format("%.2f", totalAmount));
-
+            int index = -1, i=0;
+            for (DenominationModel denominationModel : vendingMachine.getAvailableCash()) {
+                if (denominationModel.getCurrency() == denomination) {
+                    System.out.println("Found");
+                    index = i;
+                }
+                else 
+                i++;
             }
+            // Handle money button click action here
+        String buttonText = String.format("PHP %.2f", denomination);
+
+
+        // Customize the JOptionPane options
+        Object[] options = { "Insert Money", "Withdraw", "Close" };
+        int choice = JOptionPane.showOptionDialog(null,
+                "Money Denomination:\n\t" + buttonText ,
+                "Money Button Clicked",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (choice == JOptionPane.YES_OPTION) {
+            // Option to insert money
+            String input = JOptionPane.showInputDialog(null, "Enter the amount to insert:", "Insert Money", JOptionPane.QUESTION_MESSAGE);
+            if (input != null) {
+                try {
+                    double amountToAdd = Double.parseDouble(input);
+                    vendingMachine.getAvailableCash().get(index).depositMoney((int)amountToAdd);
+                    denominationModel.depositMoney((int)amountToAdd);
+
+                    amountToAdd *= denomination;
+                    totalAmount += amountToAdd;
+
+                    JOptionPane.showMessageDialog(null, "You have inserted PHP " + amountToAdd, "Money Inserted", JOptionPane.INFORMATION_MESSAGE);
+                    
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(null, "Invalid input. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } else if (choice == JOptionPane.NO_OPTION) {
+            // Option to withdraw
+            if (denominationModel.getNumCurrency() > 0) {
+                double withdrawnAmount = denomination * denominationModel.getNumCurrency();
+
+                vendingMachine.getAvailableCash().get(index).withdrawMoney(vendingMachine.getAvailableCash().get(index).getNumCurrency());
+                denominationModel.withdrawMoney(denominationModel.getNumCurrency());
+
+                totalAmount -= withdrawnAmount;
+                JOptionPane.showMessageDialog(null, "You have withdrawn PHP " + withdrawnAmount, "Money Withdrawn", JOptionPane.INFORMATION_MESSAGE);
+                
+            } else {
+                JOptionPane.showMessageDialog(null, "No money to withdraw.", "Information", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+        // Choice is JOptionPane.CANCEL_OPTION for "Close" button, so no action needed for Close.
+        
+        // Update the total amount field
+        vendingMachine.setTotalPaymentAmount(totalAmount);
+        totalAmountField.setText("Total Amount: PHP " + String.format("%.2f", totalAmount));
+        displayDenominations();
+
+        // Inside MoneyButtonActionListener actionPerformed() method:
+// After updating the available cash and totalAmount, call the method to update the panel
+vendingMachine.setTotalPaymentAmount(totalAmount);
+updateMoneyDenominationsPanel();
         }
     }
 
     private JPanel createTotalAmountPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout());
+        JPanel panel = new JPanel(new BorderLayout());
 
-        totalAmountField = new JTextField("Total Amount: PHP 0.00", 15);
-        totalAmountField.setEditable(false);
-        panel.add(totalAmountField);
+        // Create a new JPanel to display total amount
+        JPanel totalAmountPanel = createUneditableTextPanel();
+        totalAmountPanel.setBorder(BorderFactory.createTitledBorder("Total Amount"));
+        panel.add(totalAmountPanel, BorderLayout.CENTER);
 
         return panel;
     }
+
+    // transaction summary
+    private void showTransactionSummary(String summary) {
+        JTextArea summaryTextArea = new JTextArea(summary, 10, 30);
+        summaryTextArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(summaryTextArea);
+
+        JOptionPane.showMessageDialog(null, scrollPane, "Summary of Transactions",
+                JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private String generateTransactionSummary() {
+        // Implement the logic to generate the summary here
+        // For example, you can retrieve the transaction data from the VendingMachine
+        // and create a formatted string containing the relevant information.
+        // Replace the return statement below with the actual logic.
+
+        String summary = "Summary of Transactions:\n\n";
+        summary += "Transaction 1: HAHAHHA\n";
+        summary += "Transaction 2: sdfsfd\n";
+        // Add transaction data to the summary
+        // For example:
+        // summary += "Transaction 1: [Details]\n";
+        // summary += "Transaction 2: [Details]\n";
+        // ...
+        return summary;
+    }
+
+    // starting inventory summary
+    private void showStartingInventory(String startingInventory) {
+        JTextArea startInventoryTextArea = new JTextArea(startingInventory, 10, 30);
+        startInventoryTextArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(startInventoryTextArea);
+
+        JOptionPane.showMessageDialog(null, scrollPane, "Starting Inventory",
+                JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private String generateStartingInventory() {
+        // Implement the logic to generate the summary here
+        // For example, you can retrieve the transaction data from the VendingMachine
+        // and create a formatted string containing the relevant information.
+        // Replace the return statement below with the actual logic.
+
+        String summary = "Summary of Transactions:\n\n";
+        summary += "Transaction 1: HAHAHHA\n";
+        summary += "Transaction 2: sdfsfd\n";
+        // Add transaction data to the summary
+        // For example:
+        // summary += "Transaction 1: [Details]\n";
+        // summary += "Transaction 2: [Details]\n";
+        // ...
+        return summary;
+    }
+
+    // current inventory summary
+    private void showCurrentInventory(String currentInventory) {
+        JTextArea currentInventoryTextArea = new JTextArea(currentInventory, 10, 30);
+        currentInventoryTextArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(currentInventoryTextArea);
+
+        JOptionPane.showMessageDialog(null, scrollPane, "Current Inventory",
+                JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private String generateCurrentInventory() {
+        // Implement the logic to generate the summary here
+        // For example, you can retrieve the transaction data from the VendingMachine
+        // and create a formatted string containing the relevant information.
+        // Replace the return statement below with the actual logic.
+
+        String summary = "Summary of Transactions:\n\n";
+        summary += "Transaction 1: HAHAHHA\n";
+        summary += "Transaction 2: sdfsfd\n";
+        // Add transaction data to the summary
+        // For example:
+        // summary += "Transaction 1: [Details]\n";
+        // summary += "Transaction 2: [Details]\n";
+        // ...
+        return summary;
+    }
+
+    private JPanel createMoneyDenominationsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(2, 5, 10, 10)); // 2 rows, 5 columns, with 10px vertical and horizontal gaps
+    
+        // Add non-editable text fields with borders for each money denomination
+        ArrayList<DenominationModel> denominations = vendingMachine.getAvailableCash();
+        for (DenominationModel denomination : denominations) {
+            String labelText = denomination.getCurrencyName() + ": " + denomination.getNumCurrency() + " x " + denomination.getCurrency();
+            JTextField textField = new JTextField(labelText);
+            textField.setEditable(false);
+            textField.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            
+            // Center-align the text in the text field
+            textField.setHorizontalAlignment(JTextField.CENTER);
+    
+            // Set the text to be bold
+            Font font = textField.getFont();
+            textField.setFont(font.deriveFont(font.getStyle() | Font.BOLD));
+    
+            panel.add(textField);
+        }
+    
+        return panel;
+    }
+    
 
     private class ButtonActionListener implements ActionListener {
         @Override
@@ -191,6 +401,20 @@ public class MaintenanceView extends JPanel {
                                 price = Double.parseDouble(priceField.getText());
                                 calories = Double.parseDouble(caloriesField.getText());
                                 stock = Integer.parseInt(stockField.getText());
+
+                                 if (stock <= 10) {
+                            ItemModel tempItem = new ItemModel(name, price, calories);
+                            vendingMachine.getItemSlot().get(intIndex - 1).setItem(tempItem);
+                            vendingMachine.getItemSlot().get(intIndex-1).addQuantity(stock);
+
+                            tempSlots[intIndex-1] = tempItem;
+                            // Update the button text to the item name
+                            button.setText(name);
+                            } else {
+                                JOptionPane.showMessageDialog(null,
+                            "Error: Total stock cannot exceed 10.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+                            }
                             } catch (NumberFormatException ex) {
                                 JOptionPane.showMessageDialog(null,
                                         "Invalid input. Please enter valid numbers for price, calories, and stock.",
@@ -200,25 +424,45 @@ public class MaintenanceView extends JPanel {
 
                             // Here you can use the name, price, calories, and stock variables as needed //
                             // update
-
-                            ItemModel tempItem = new ItemModel(name, price, calories);
-                            vendingMachine.getItemSlot().get(intIndex - 1).setItem(tempItem);
-                            vendingMachine.getItemSlot().get(intIndex - 1).addQuantity(stock);
-
-                            tempSlots[intIndex - 1] = tempItem;
-
-                            // Update the button text to the item name
-                            button.setText(name);
+                           
+                            
+                            
                         }
                     }
                 }
             } catch (NumberFormatException ex) {
-                String[] options2 = { "Restock Item", "Reprice Item", "Cancel" };
+                 String itemName = buttonText;
+                    int itemIndex = -1;
+    
+                    // Find the index of the item with the given name
+                    for (int i = 0; i < tempSlots.length; i++) {
+                        if (tempSlots[i] != null && tempSlots[i].getName().equals(itemName)) {
+                            itemIndex = i;
+                            break;
+                        }
+                    }
+                ItemModel item = vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem();
+                String itemDetails = "<html><b>Name:</b> " + item.getName() + "<br>"
+                        + "<b>Price:</b> $" + item.getPrice() + "<br>"
+                        + "<b>Calories:</b> " + item.getCalories() + "<br>"
+                        + "<b>Stock:</b> " + vendingMachine.getItemSlot().get(itemIndex).getItemQuantity() + "<br></html>";
+            
+                // Create a custom panel to display the item details
+                JPanel panel = new JPanel();
+    JLabel label = new JLabel(itemDetails);
+    panel.add(label);
 
+    // Show the custom panel with item details first
+    JOptionPane.showMessageDialog(null, panel, "Item Details",
+            JOptionPane.PLAIN_MESSAGE);
+
+                String[] options2 = { "Restock Item", "Reprice Item", "Cancel" };
+                
                 // Show the option dialog
+                
 
                 int choice2 = JOptionPane.showOptionDialog(null,
-                        "Please select an option:",
+                        "Please select an option:\n",
                         "Three Options",
                         JOptionPane.YES_NO_CANCEL_OPTION, // Specify the option type
                         JOptionPane.QUESTION_MESSAGE, // Specify the message type
@@ -227,11 +471,11 @@ public class MaintenanceView extends JPanel {
                         options2[0]); // Set the default option (Optional)
 
                 // Handle the user's choice
-                if (choice2 == JOptionPane.YES_OPTION) {
+                if (choice2 == JOptionPane.YES_OPTION) { 
                     // Restock
-                    String itemName = buttonText;
-                    int itemIndex = -1;
-
+                     itemName = buttonText;
+                     itemIndex = -1;
+    
                     // Find the index of the item with the given name
                     for (int i = 0; i < tempSlots.length; i++) {
                         if (tempSlots[i] != null && tempSlots[i].getName().equals(itemName)) {
@@ -241,107 +485,124 @@ public class MaintenanceView extends JPanel {
                     }
 
                     if (itemIndex != -1) {
-                        ItemModel item = vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem();
-                        String itemDetails = "Name: " + item.getName() + "\n"
-                                + "Price: $" + item.getPrice() + "\n"
-                                + "Calories: " + item.getCalories() + "\n"
-                                + "Stock: " + vendingMachine.getItemSlot().get(itemIndex).getItemQuantity() + "\n";
+                         item = vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem();
+                         itemDetails = "Name: " + item.getName() + "\n"
+                + "Price: PHP" + item.getPrice() + "\n"
+                + "Calories: " + item.getCalories() + "\n"
+                + "Stock: " + vendingMachine.getItemSlot().get(itemIndex).getItemQuantity() + "\n";
 
-                        JOptionPane.showMessageDialog(null, itemDetails, "Item Details",
-                                JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(null, itemDetails, "Item Details", JOptionPane.INFORMATION_MESSAGE);
 
-                        JPanel panel2 = new JPanel(new GridLayout(1, 2));
-                        panel2.add(new JLabel("Restock:"));
-                        JTextField stockField = new JTextField(5);
-                        panel2.add(stockField);
+        JPanel panel2 = new JPanel(new GridLayout(1, 2));
+        panel2.add(new JLabel("Restock:"));
+        JTextField stockField = new JTextField(5);
+        panel2.add(stockField);
 
-                        int result = JOptionPane.showConfirmDialog(null, panel2, "Restock Item",
-                                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
+        int result = JOptionPane.showConfirmDialog(null, panel2, "Restock Item",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    
                         if (result == JOptionPane.OK_OPTION) {
                             int quantity = 0;
                             try {
                                 quantity = Integer.parseInt(stockField.getText());
+                                int currentStock = vendingMachine.getItemSlot().get(itemIndex).getItemQuantity();
+                                int newStock = currentStock + quantity;
+
+                            if (newStock <= 10) {
+                                vendingMachine.getItemSlot().get(itemIndex).addQuantity(quantity);
+
+                            // Show a message to inform the user about the restock
+                            JOptionPane.showMessageDialog(null,
+                            "Successfully restocked " + quantity + " items for " + vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem().getName(),
+                      "Restock Successful", JOptionPane.INFORMATION_MESSAGE);
+                            } else {
+                            // Show an error message if the new stock exceeds the limit of 10
+                            JOptionPane.showMessageDialog(null,
+                            "Error: Total stock cannot exceed 10. Current stock: " + currentStock,
+                    "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+
                             } catch (NumberFormatException ex1) {
                                 JOptionPane.showMessageDialog(null,
                                         "Invalid input. Please enter a valid number.",
                                         "Error", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
-
-                            // Get the corresponding item slot from the VendingMachine
-                            if (itemIndex >= 0 && itemIndex < vendingMachine.getItemSlot().size()) {
-                                SlotModel itemSlot = vendingMachine.getItemSlot().get(itemIndex);
-                                itemSlot.addQuantity(quantity);
-
-                                // Show a message to inform the user about the restock
-                                JOptionPane.showMessageDialog(null,
-                                        "Successfully restocked " + quantity + " items for "
-                                                + itemSlot.getDesignatedItem().getName(),
-                                        "Restock Successful", JOptionPane.INFORMATION_MESSAGE);
-
-                            } else {
-                                JOptionPane.showMessageDialog(null, "Invalid item index.", "Error",
-                                        JOptionPane.ERROR_MESSAGE);
-                            }
-                        }
-                    } else {
+    
+                            
+                    } } else {
                         JOptionPane.showMessageDialog(null, "Item not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }} else if (choice2 == JOptionPane.NO_OPTION) {
+                // Reprice
+                 itemName = buttonText;
+                 itemIndex = -1;
+
+                // Find the index of the item with the given name
+                for (int i = 0; i < tempSlots.length; i++) {
+                    if (tempSlots[i] != null && tempSlots[i].getName().equals(itemName)) {
+                        itemIndex = i;
+                        break;
                     }
-                } else if (choice2 == JOptionPane.NO_OPTION) {
-                    // Reprice
-                    String itemName = buttonText;
-                    int itemIndex = -1;
+                }
 
-                    // Find the index of the item with the given name
-                    for (int i = 0; i < tempSlots.length; i++) {
-                        if (tempSlots[i] != null && tempSlots[i].getName().equals(itemName)) {
-                            itemIndex = i;
-                            break;
-                        }
-                    }
+                if (itemIndex != -1) {
+                    JPanel panel3 = new JPanel(new GridLayout(1, 2));
+                    panel3.add(new JLabel("New Price:"));
+                    JTextField priceField = new JTextField(10);
+                    panel3.add(priceField);
 
-                    if (itemIndex != -1) {
-                        JPanel panel3 = new JPanel(new GridLayout(1, 2));
-                        panel3.add(new JLabel("New Price:"));
-                        JTextField priceField = new JTextField(10);
-                        panel3.add(priceField);
+                    int result = JOptionPane.showConfirmDialog(null, panel3, "Reprice Item",
+                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
-                        int result = JOptionPane.showConfirmDialog(null, panel3, "Reprice Item",
-                                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-                        if (result == JOptionPane.OK_OPTION) {
-                            double newPrice = 0.0;
-                            try {
-                                newPrice = Double.parseDouble(priceField.getText());
-                            } catch (NumberFormatException ex1) {
-                                JOptionPane.showMessageDialog(null,
-                                        "Invalid input. Please enter a valid number for the new price.",
-                                        "Error", JOptionPane.ERROR_MESSAGE);
-                                return;
-                            }
-
-                            // Get the corresponding item from the tempSlots array
-                            ItemModel item = vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem();
-                            if (item != null) {
-                                item.setPrice(newPrice);
-
-                                // Show a message to inform the user about the repriced item
-                                JOptionPane.showMessageDialog(null,
-                                        "Item " + item.getName() + " has been repriced to $" + newPrice,
-                                        "Reprice Successful", JOptionPane.INFORMATION_MESSAGE);
-                            }
-                            System.out.println("PRICE: " + item.getPrice());
+                    if (result == JOptionPane.OK_OPTION) {
+                        double newPrice = 0.0;
+                        try {
+                            newPrice = Double.parseDouble(priceField.getText());
+                        } catch (NumberFormatException ex1) {
+                            JOptionPane.showMessageDialog(null,
+                                    "Invalid input. Please enter a valid number for the new price.",
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                            return;
                         }
 
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Item not found.", "Error", JOptionPane.ERROR_MESSAGE);
-                    }
+                        // Get the corresponding item from the tempSlots array
+                         item = vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem();
+                        if (item != null) {
+                            item.setPrice(newPrice);
 
+                            // Show a message to inform the user about the repriced item
+                            JOptionPane.showMessageDialog(null,
+                                    "Item " + item.getName() + " has been repriced to $" + newPrice,
+                                    "Reprice Successful", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                        System.out.println("PRICE: " + item.getPrice());
+                    }
+                    
+                } else {
+                    JOptionPane.showMessageDialog(null, "Item not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                
+            }
                 }
             }
         }
-    }
+    
+        public void updateMoneyDenominationsPanel() {
+            // Update the content of the existing money denominations panel
+            ArrayList<DenominationModel> denominations = vendingMachine.getAvailableCash();
+            int index = 0;
+            for (DenominationModel denomination : denominations) {
+                String labelText = denomination.getCurrencyName() + ": " + denomination.getNumCurrency() + " x " + denomination.getCurrency();
+                JTextField textField = (JTextField) moneyDenominationsPanel.getComponent(index);
+                textField.setText(labelText);
+                index++;
+            }
+        
+            revalidate();
+            repaint();
+        }
+        
+    
 
     public void setVendingMachine(VendingMachine vendingMachine) {
         this.vendingMachine = vendingMachine;
@@ -353,5 +614,18 @@ public class MaintenanceView extends JPanel {
 
     public ItemModel[] getTempSlots() {
         return this.tempSlots;
+    }
+
+    public void displayDenominations() {
+            VendingMachine vm = this.vendingMachine;
+            int counter = 1;
+            System.out.println("Available Cash: ");
+            for (DenominationModel money : vm.getAvailableCash()) {
+                System.out.println(counter + ". " + money.getCurrencyName() + " || " + money.getCurrency() + " x "
+                        + money.getNumCurrency() + " || " + "Total Amount = " + money.getTotalValue());
+                counter++;
+            }
+            System.out.println();
+        
     }
 }
