@@ -3,12 +3,12 @@ package View;
 import javax.swing.*;
 
 import Model.*;
+import Controller.*;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 
 public class MaintenanceView extends JPanel {
 
@@ -16,12 +16,12 @@ public class MaintenanceView extends JPanel {
     private JButton backButton;
     private JTextField totalAmountField;
     private double totalAmount = 0.0;
-    private Map<JButton, ItemModel> buttonItemMap;
+    private ItemModel[] tempSlots;
 
     public MaintenanceView(VendingMachine vendingMachine) {
         setLayout(new BorderLayout());
-        vendingMachine.initializeSlots();
-        buttonItemMap = new HashMap<>();
+        this.vendingMachine = vendingMachine;
+        this.tempSlots = new ItemModel[9];
 
         // Panel 1: Uneditable Text Field
         JPanel displayAmountPanel = createTotalAmountPanel();
@@ -71,8 +71,6 @@ public class MaintenanceView extends JPanel {
             JButton button = new JButton(Integer.toString(i));
             button.addActionListener(new ButtonActionListener());
             panel.add(button);
-
-            buttonItemMap.put(button, null);
         }
 
         return panel;
@@ -205,6 +203,10 @@ public class MaintenanceView extends JPanel {
 
                             ItemModel tempItem = new ItemModel(name, price, calories);
                             vendingMachine.getItemSlot().get(intIndex - 1).setItem(tempItem);
+                            vendingMachine.getItemSlot().get(intIndex-1).addQuantity(stock);
+
+                            tempSlots[intIndex-1] = tempItem;
+
                             // Update the button text to the item name
                             button.setText(name);
                         }
@@ -214,6 +216,8 @@ public class MaintenanceView extends JPanel {
                 String[] options2 = { "Restock Item", "Reprice Item", "Cancel" };
 
                 // Show the option dialog
+                
+
                 int choice2 = JOptionPane.showOptionDialog(null,
                         "Please select an option:",
                         "Three Options",
@@ -224,46 +228,122 @@ public class MaintenanceView extends JPanel {
                         options2[0]); // Set the default option (Optional)
 
                 // Handle the user's choice
-                if (choice2 == JOptionPane.YES_OPTION) {
-                    JPanel panel2 = new JPanel(new GridLayout(4, 2));
-                    panel2.add(new JLabel("Restock:"));
-                    JTextField stockField = new JTextField(15);
-                    panel2.add(stockField);
-
-                    int result = JOptionPane.showConfirmDialog(null, panel2, "Restock Item",
-                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-                    if (result == JOptionPane.OK_OPTION) {
-                        // Process the entered restock value here
-                        // ...
+                if (choice2 == JOptionPane.YES_OPTION) { 
+                    // Restock
+                    String itemName = buttonText;
+                    int itemIndex = -1;
+    
+                    // Find the index of the item with the given name
+                    for (int i = 0; i < tempSlots.length; i++) {
+                        if (tempSlots[i] != null && tempSlots[i].getName().equals(itemName)) {
+                            itemIndex = i;
+                            break;
+                        }
                     }
-                } else if (choice2 == JOptionPane.NO_OPTION) {
-                    JPanel panel3 = new JPanel(new GridLayout(4, 2));
+
+                 
+        
+    
+                    if (itemIndex != -1) {
+                        ItemModel item = vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem();
+                        String itemDetails = "Name: " + item.getName() + "\n"
+                + "Price: $" + item.getPrice() + "\n"
+                + "Calories: " + item.getCalories() + "\n"
+                + "Stock: " + vendingMachine.getItemSlot().get(itemIndex).getItemQuantity() + "\n";
+
+        JOptionPane.showMessageDialog(null, itemDetails, "Item Details", JOptionPane.INFORMATION_MESSAGE);
+
+        JPanel panel2 = new JPanel(new GridLayout(1, 2));
+        panel2.add(new JLabel("Restock:"));
+        JTextField stockField = new JTextField(5);
+        panel2.add(stockField);
+
+        int result = JOptionPane.showConfirmDialog(null, panel2, "Restock Item",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    
+                        if (result == JOptionPane.OK_OPTION) {
+                            int quantity = 0;
+                            try {
+                                quantity = Integer.parseInt(stockField.getText());
+                            } catch (NumberFormatException ex1) {
+                                JOptionPane.showMessageDialog(null,
+                                        "Invalid input. Please enter a valid number.",
+                                        "Error", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+    
+                            // Get the corresponding item slot from the VendingMachine
+                            if (itemIndex >= 0 && itemIndex < vendingMachine.getItemSlot().size()) {
+                                SlotModel itemSlot = vendingMachine.getItemSlot().get(itemIndex);
+                                itemSlot.addQuantity(quantity);
+    
+                                // Show a message to inform the user about the restock
+                                JOptionPane.showMessageDialog(null,
+                                        "Successfully restocked " + quantity + " items for " + itemSlot.getDesignatedItem().getName(),
+                                        "Restock Successful", JOptionPane.INFORMATION_MESSAGE);
+
+                            } else {
+                                JOptionPane.showMessageDialog(null, "Invalid item index.", "Error",
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Item not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }} else if (choice2 == JOptionPane.NO_OPTION) {
+                // Reprice
+                String itemName = buttonText;
+                int itemIndex = -1;
+
+                // Find the index of the item with the given name
+                for (int i = 0; i < tempSlots.length; i++) {
+                    if (tempSlots[i] != null && tempSlots[i].getName().equals(itemName)) {
+                        itemIndex = i;
+                        break;
+                    }
+                }
+
+                if (itemIndex != -1) {
+                    JPanel panel3 = new JPanel(new GridLayout(1, 2));
                     panel3.add(new JLabel("New Price:"));
-                    JTextField priceField = new JTextField(15);
+                    JTextField priceField = new JTextField(10);
                     panel3.add(priceField);
 
                     int result = JOptionPane.showConfirmDialog(null, panel3, "Reprice Item",
                             JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
                     if (result == JOptionPane.OK_OPTION) {
-                        // Process the entered new price value here
-                        // ...
+                        double newPrice = 0.0;
+                        try {
+                            newPrice = Double.parseDouble(priceField.getText());
+                        } catch (NumberFormatException ex1) {
+                            JOptionPane.showMessageDialog(null,
+                                    "Invalid input. Please enter a valid number for the new price.",
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
 
+                        // Get the corresponding item from the tempSlots array
+                        ItemModel item = vendingMachine.getItemSlot().get(itemIndex).getDesignatedItem();
+                        if (item != null) {
+                            item.setPrice(newPrice);
+
+                            // Show a message to inform the user about the repriced item
+                            JOptionPane.showMessageDialog(null,
+                                    "Item " + item.getName() + " has been repriced to $" + newPrice,
+                                    "Reprice Successful", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                        System.out.println("PRICE: " + item.getPrice());
                     }
+                    
+                } else {
+                    JOptionPane.showMessageDialog(null, "Item not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                
+            }
                 }
             }
         }
-
-        private void updateButtonWithItem(JButton button, ItemModel tempItem) {
-            // Update the button text to the item name
-            button.setText(tempItem.getName());
-
-            // Store the corresponding ItemModel in the map
-            buttonItemMap.put(button, tempItem);
-        }
-
-    }
+    
 
     public void setVendingMachine(VendingMachine vendingMachine) {
         this.vendingMachine = vendingMachine;
@@ -271,5 +351,9 @@ public class MaintenanceView extends JPanel {
 
     public VendingMachine getVendingMachine() {
         return this.vendingMachine;
+    }
+
+    public ItemModel[] getTempSlots() {
+        return this.tempSlots;
     }
 }

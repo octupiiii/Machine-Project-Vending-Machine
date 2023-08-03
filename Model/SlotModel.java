@@ -101,8 +101,8 @@ public class SlotModel {
     }
 
     public void setItem(ItemModel item) {
-        if (designatedItem == null)
-            this.designatedItem = item;
+        if (designatedItem != null)
+            this.designatedItem = new ItemModel(item.getName(), item.getPrice(), item.getCalories());
         else
             System.out.println("ERROR. NO ITEM IN SLOT");
         updateNItems();

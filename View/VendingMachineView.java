@@ -7,6 +7,7 @@ import Model.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 public class VendingMachineView extends JPanel {
 
@@ -14,10 +15,25 @@ public class VendingMachineView extends JPanel {
     private JButton backButton;
     private JTextField totalAmountField;
     private double totalAmount = 0.0;
+    private ArrayList<String> tempName;
+    private JPanel panel1;
 
     public VendingMachineView(VendingMachine vendingMachine) {
-        this.vendingMachine = vendingMachine;
+        this.vendingMachine = new VendingMachine();
+        this.vendingMachine.initializeSlots();
+        
+        
+        this.tempName = new ArrayList<String>();
         setLayout(new BorderLayout());
+        
+        // initialize temporary names
+        int i=0;
+        int size = this.vendingMachine.getItemSlot().size();
+        System.out.println("HHHH" + size);
+        for (i=0; i<9; i++) {
+            tempName.add(i, this.vendingMachine.getItemSlot().get(i).getDesignatedItem().getName()); 
+            System.out.println(i + "ITEM- " + tempName.get(i));
+        }
 
         // Panel 1: Uneditable Text Field
         JPanel displayAmountPanel = createTotalAmountPanel();
@@ -60,20 +76,67 @@ public class VendingMachineView extends JPanel {
         backButton.addActionListener(actionListener);
     }
 
+    // private JPanel createPanelWithButtons() {
+    //     JPanel panel = new JPanel();
+    //     panel.setLayout(new GridLayout(3, 3));
+
+    //     // Add 9 buttons to the panel
+    //     for (int i = 0; i < 9; i++) {
+    //         JButton button = new JButton(vendingMachine.getItemSlot().get(i).getDesignatedItem().getName());
+    //         button.addActionListener(new ButtonActionListener());
+    //         panel.add(button);
+    //     }
+
+    //     panel.revalidate();
+    //     return panel;
+    // }
+
     private JPanel createPanelWithButtons() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 3));
-
+        panel1 = new JPanel();
+        panel1.setLayout(new GridLayout(3, 3));
+    
         // Add 9 buttons to the panel
-        for (int i = 1; i <= 9; i++) {
-            String itemName = vendingMachine.getItemSlot().get(i - 1).getDesignatedItem().getName() + i;
-            JButton button = new JButton(itemName);
+        for (int i = 0; i < 9; i++) {
+            JButton button = new JButton(); // Create a button without text initially
             button.addActionListener(new ButtonActionListener());
-            panel.add(button);
+            panel1.add(button);
         }
-
-        return panel;
+    
+        updateButtonNames(); // Update the button names
+    
+        panel1.revalidate();
+        return panel1;
     }
+
+    private void updateButtonNames() {
+        for (int i = 0; i < 9; i++) {
+            JButton button = (JButton) panel1.getComponent(i);
+            if (i < vendingMachine.getItemSlot().size()) {
+                String itemName = vendingMachine.getItemSlot().get(i).getDesignatedItem().getName();
+                button.setText(itemName);
+            } else {
+                button.setText(""); // Clear the text for empty slots
+            }
+        }
+    }
+    
+    
+    
+
+    // private JPanel createPanelWithButtons() {
+    //     JPanel panel = new JPanel();
+    //     panel.setLayout(new GridLayout(3, 3));
+
+    //     // Add 9 buttons to the panel
+    //     for (int i = 0; i < 9; i++) {
+    //         //String itemName = vendingMachine.getItemSlot().get(i - 1).getDesignatedItem().getName() + i;
+    //         JButton button = new JButton(tempName.get(i));
+    //         button.addActionListener(new ButtonActionListener());
+    //         panel.add(button);
+    //     }
+
+    //     return panel;
+    // }
 
     // private JPanel createPanelWithButtons() {
     // JPanel panel = new JPanel();
@@ -135,10 +198,15 @@ public class VendingMachineView extends JPanel {
                     options,
                     options[0]);
 
+                    
+
             if (choice == JOptionPane.YES_OPTION) {
                 // update Total amount
                 totalAmount += denomination;
                 System.out.println("HELLO  " + vendingMachine.getItemSlot().get(4).getDesignatedItem().getName());
+                for (int i=0; i<9; i++) {
+                        System.out.println(i + "ITEM- " + vendingMachine.getItemSlot().get(i).getDesignatedItem().getName());
+                    }
                 // If "Add Item" is clicked, show another JOptionPane to inform the user
                 JOptionPane.showMessageDialog(null, "Item added with denomination: " + buttonText, "Item Added",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -159,13 +227,21 @@ public class VendingMachineView extends JPanel {
         return panel;
     }
 
+    public void refreshButtons() {
+        updateButtonNames();
+    }
+    
+
     private class ButtonActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
+            
             // Handle button click action here
             JButton button = (JButton) e.getSource();
             String buttonText = button.getText();
             int index = Integer.parseInt(buttonText) - 1;
+
+            updateButtonNames();
 
             // Check if the index is within the bounds of the list
             if (index >= 0 && index < vendingMachine.getItemSlot().size()) {
@@ -200,7 +276,9 @@ public class VendingMachineView extends JPanel {
                     }
                 }
             }
+            
         }
+        
     }
 
     public void setVendingMachine(VendingMachine vendingMachine) {
@@ -210,5 +288,6 @@ public class VendingMachineView extends JPanel {
     public VendingMachine getVendingMachine() {
         return this.vendingMachine;
     }
+
 
 }

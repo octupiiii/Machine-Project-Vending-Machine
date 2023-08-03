@@ -61,4 +61,8 @@ public class ItemModel {
         this.calories = newCalories;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
 }

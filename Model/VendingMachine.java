@@ -73,15 +73,15 @@ public class VendingMachine {
     // methods
 
     public void initializeSlots() {
-        itemSlot.add(new SlotModel("1"));
-        itemSlot.add(new SlotModel("2"));
-        itemSlot.add(new SlotModel("3"));
-        itemSlot.add(new SlotModel("4"));
-        itemSlot.add(new SlotModel("5"));
-        itemSlot.add(new SlotModel("6"));
-        itemSlot.add(new SlotModel("7"));
-        itemSlot.add(new SlotModel("8"));
-        itemSlot.add(new SlotModel("9"));
+        itemSlot.add(new SlotModel("1", new ItemModel("1", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("2", new ItemModel("2", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("3", new ItemModel("3", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("4", new ItemModel("4", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("5", new ItemModel("5", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("6", new ItemModel("6", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("7", new ItemModel("7", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("8", new ItemModel("8", 0.0, 0.0)));
+        itemSlot.add(new SlotModel("9", new ItemModel("9", 0.0, 0.0)));
     }
 
     public void initializeMoney() {
