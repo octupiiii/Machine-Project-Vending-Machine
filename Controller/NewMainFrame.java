@@ -113,11 +113,13 @@ public class NewMainFrame extends JFrame {
                     if (choice == JOptionPane.YES_OPTION) {
 
                         if (!svmStatus) {
+                            maintenanceVM.updateMoneyDenominationsPanel();
                             vendingVMView.setVendingMachine(this.vendingMachine);
                             vendingVMView.refreshButtons();
                             menu.setVisible(false);
                             vendingVMView.setVisible(true);
                             this.vendingMachine = vendingVMView.getVendingMachine();
+                            // maintenanceVM.updateMoneyDenominationsPanel();
 
                         } else {
                             specialVM.setVendingMachine(this.vendingMachine);
@@ -125,6 +127,7 @@ public class NewMainFrame extends JFrame {
                             menu.setVisible(false);
                             specialVM.setVisible(true);
                             this.vendingMachine = vendingVMView.getVendingMachine();
+
                         }
                     } else if (choice == JOptionPane.NO_OPTION) {
                         maintenanceVM.setVendingMachine(vendingMachine);

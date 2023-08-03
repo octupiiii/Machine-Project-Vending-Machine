@@ -120,4 +120,5 @@ public class DenominationModel {
     public void setNumCurrency(int numCurrency) {
         this.numCurrency = numCurrency;
     }
+
 }

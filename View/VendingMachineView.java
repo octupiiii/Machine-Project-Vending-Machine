@@ -3,9 +3,9 @@ package View;
 import javax.swing.*;
 import Model.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The VendingMachineView class represents the graphical user interface for the
@@ -177,14 +177,38 @@ public class VendingMachineView extends JPanel {
                     options[0]);
 
             if (choice == JOptionPane.YES_OPTION) {
-                // update Total amount
+                // Update Total amount
                 totalAmount += denomination;
-                // If "Add Item" is clicked, show another JOptionPane to inform the user
+                // If "Insert Money" is clicked, show another JOptionPane to inform the user
                 JOptionPane.showMessageDialog(null, "Inserted: " + buttonText, "Money Inserted",
                         JOptionPane.INFORMATION_MESSAGE);
                 totalAmountField.setText("Inserted Money: PHP " + String.format("%.2f", totalAmount));
+
+                // Update the corresponding DenominationModel in availableCash
+                for (DenominationModel denominationModel : vendingMachine.getAvailableCash()) {
+                    if (denominationModel.getCurrency() == denomination) {
+                        denominationModel.depositMoney(1); // Increase the number of currency units by 1
+                        break; // No need to check further, as denomination is unique
+
+                    }
+                }
             }
+            displayDenominations();
         }
+
+    }
+
+    public void displayDenominations() {
+        VendingMachine vm = this.vendingMachine;
+        int counter = 1;
+        System.out.println("Available Cash: ");
+        for (DenominationModel money : vm.getAvailableCash()) {
+            System.out.println(counter + ". " + money.getCurrencyName() + " || " + money.getCurrency() + " x "
+                    + money.getNumCurrency() + " || " + "Total Amount = " + money.getTotalValue());
+            counter++;
+        }
+        System.out.println();
+
     }
 
     /**
@@ -218,7 +242,6 @@ public class VendingMachineView extends JPanel {
     private class ButtonActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            // Handle button click action here
             JButton button = (JButton) e.getSource();
             String buttonText = button.getText();
 
@@ -229,60 +252,70 @@ public class VendingMachineView extends JPanel {
             double price = vendingMachine.getItemSlot().get(index).getDesignatedItem().getPrice();
             double calories = vendingMachine.getItemSlot().get(index).getDesignatedItem().getCalories();
 
-            // Check if the index is within the bounds of the list
             if (index >= 0 && index < vendingMachine.getItemSlot().size()) {
                 int itemQuantity = vendingMachine.getItemSlot().get(index).getItemQuantity();
                 if (itemQuantity == 0) {
-                    // Item is not available
                     JOptionPane.showMessageDialog(null, "Item Unavailable", "Error", JOptionPane.ERROR_MESSAGE);
-                    return; // Return without showing the "Buy" option dialog
+                    return;
                 }
 
-                // Customize the JOptionPane options
                 Object[] options = { "Buy", "Cancel" };
-                int choice = JOptionPane.showOptionDialog(null, "Price: PHP" + price + " \nCalories: " + calories,
-                        name,
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        null,
-                        options,
-                        options[0]);
+                int choice = JOptionPane.showOptionDialog(null, "Price: PHP" + price + " \nCalories: " + calories, name,
+                        JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 
                 if (choice == JOptionPane.YES_OPTION) {
-                    // Process the purchase
                     ItemModel item = vendingMachine.getItemSlot().get(index).getDesignatedItem();
                     if (item != null) {
                         if (totalAmount >= price && vendingMachine.getItemSlot().get(index).getItemQuantity() > 0) {
-                            totalAmount -= price;
-                            // Check if there's any change to return
-                            double change = totalAmount;
-                            totalAmountField.setText("Total Amount: PHP " + String.format("%.2f", totalAmount));
+                            // Check if the vending machine can provide change
+                            boolean canProvideChange = vendingMachine.canProvideChange(totalAmount - price);
 
-                            // Ask the user whether to keep the change or dispense it
-                            int changeOption = JOptionPane.showOptionDialog(null,
-                                    "Your change: PHP " + String.format("%.2f", change)
-                                            + "\nDo you want to keep the change?",
-                                    "Change", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null,
-                                    new Object[] { "Keep Change", "Dispense Change" }, "Keep Change");
+                            if (canProvideChange) {
+                                totalAmount -= price;
+                                double change = totalAmount;
+                                totalAmountField.setText("Total Amount: PHP " + String.format("%.2f", totalAmount));
 
-                            if (changeOption == JOptionPane.NO_OPTION) {
-                                // Dispense the change
-                                JOptionPane.showMessageDialog(null, "Change dispensed.", "Dispensing.....",
-                                        JOptionPane.INFORMATION_MESSAGE);
+                                int changeOption = JOptionPane.showOptionDialog(null,
+                                        "Your change: PHP " + String.format("%.2f", change)
+                                                + "\nDo you want to keep the change?",
+                                        "Change", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null,
+                                        new Object[] { "Keep Change", "Dispense Change" }, "Keep Change");
+
+                                if (changeOption == JOptionPane.NO_OPTION) {
+                                    // Dispense the change
+
+                                    System.out.print(totalAmount + "qweqwew");
+                                    produceChange(totalAmount);
+                                    System.out.print(totalAmount + "qwewqe");
+                                    JOptionPane.showMessageDialog(null, "Dispensing change", "Dispensing.....",
+                                            JOptionPane.INFORMATION_MESSAGE);
+                                    totalAmount = 0;
+                                    vendingMachine.setTotalPaymentAmount(0);
+                                } else {
+                                    // Dispense the item
+                                    vendingMachine.getItemSlot().get(index).decQuantity();
+                                    JOptionPane.showMessageDialog(null,
+                                            name + " dispensed. You still have PHP "
+                                                    + String.format("%.2f", totalAmount),
+                                            "Dispensing.....",
+                                            JOptionPane.INFORMATION_MESSAGE);
+                                }
+
+                                // Update the totalAmountField here, outside the if-else block
+                                totalAmountField.setText("Total Amount: PHP " + String.format("%.2f", totalAmount));
+                            } else {
+                                // Insufficient change
+                                JOptionPane.showMessageDialog(null,
+                                        "Insufficient change in the vending machine. Please insert exact denomination.",
+                                        "Error", JOptionPane.ERROR_MESSAGE);
                             }
-
-                            vendingMachine.getItemSlot().get(index).decQuantity(); // Decrement the item quantity after
-                                                                                   // purchase
-                            JOptionPane.showMessageDialog(null, name + " dispensed", "Dispensing.....",
-                                    JOptionPane.INFORMATION_MESSAGE);
-                        } else if (totalAmount <= price) {
+                        } else {
                             JOptionPane.showMessageDialog(null, "Insufficient funds. Please insert more money.",
                                     "Error",
                                     JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 }
-
             }
         }
 
@@ -296,7 +329,52 @@ public class VendingMachineView extends JPanel {
             }
             return -1; // Item not found
         }
+    }
 
+    public boolean produceChange(double amount) {
+        // Create a copy of availableCash to track remaining denominations
+        List<DenominationModel> remainingDenominations = vendingMachine.getAvailableCash();
+
+        // Calculate and display the change in different denominations
+        System.out.println("\nCalculating total change . . .");
+        for (DenominationModel denomination : remainingDenominations) {
+            double denominationValue = denomination.getCurrency();
+            if (amount >= denominationValue && denomination.getNumCurrency() > 0) {
+                int numDenominations = (int) (amount / denominationValue);
+                numDenominations = Math.min(numDenominations, denomination.getNumCurrency()); // Limit to available
+                                                                                              // denominations
+                amount -= denominationValue * numDenominations;
+
+                // Update vending machine's denominations only once for each denomination
+                if (numDenominations > 0) {
+                    denomination.setNumCurrency(denomination.getNumCurrency() - numDenominations);
+                    System.out.println(
+                            "[ Dispensing < " + numDenominations + " > " + denomination.getCurrencyName() + " ]");
+                }
+
+                // Stop the loop if the amount is fully dispensed
+                if (amount == 0) {
+                    break;
+                }
+            }
+        }
+
+        if (amount > 0) {
+            System.out.println("Unable to dispense the full amount due to insufficient change.");
+            // Roll back the changes made to remainingDenominations
+            for (DenominationModel denomination : remainingDenominations) {
+                for (DenominationModel vendingDenomination : vendingMachine.getAvailableCash()) {
+                    if (vendingDenomination.getCurrencyName().equals(denomination.getCurrencyName())) {
+                        vendingDenomination.depositMoney(denomination.getNumCurrency());
+                        break;
+                    }
+                }
+            }
+            return false;
+        } else {
+            System.out.println("Remaining change: PHP " + amount);
+        }
+        return true;
     }
 
     /**

@@ -1,6 +1,7 @@
 package Model;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class VendingMachine {
 
@@ -97,4 +98,22 @@ public class VendingMachine {
         availableCash.add(new DenominationModel("25-Centavos", 0.25));
     }
 
+    public boolean canProvideChange(double amount) {
+        // Create a copy of availableCash to track remaining denominations
+        List<DenominationModel> remainingDenominations = new ArrayList<>(availableCash);
+
+        // Simulate the change-making process
+        for (DenominationModel denomination : remainingDenominations) {
+            double denominationValue = denomination.getCurrency();
+            if (amount >= denominationValue && denomination.getNumCurrency() > 0) {
+                int numDenominations = (int) (amount / denominationValue);
+                numDenominations = Math.min(numDenominations, denomination.getNumCurrency()); // Limit to available
+                                                                                              // denominations
+                amount -= denominationValue * numDenominations;
+            }
+        }
+
+        // If the amount becomes zero, it means change can be provided
+        return amount == 0;
+    }
 }
