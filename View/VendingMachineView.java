@@ -76,10 +76,8 @@ public class VendingMachineView extends JPanel {
      *
      * @return The JPanel containing the center button.
      */
-    private JPanel createCenterButtonPanel() {
+    protected JPanel createCenterButtonPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Center-align the button
-        JButton centerButton = new JButton("Special Ice Cream");
-        panel.add(centerButton);
         return panel;
     }
 

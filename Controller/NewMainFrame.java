@@ -27,6 +27,10 @@ public class NewMainFrame extends JFrame {
     private MaintenanceView maintenanceVM;
     private boolean vmStatus = false;
     private double totalAmount = 0.0;
+    private boolean svmStatus = false;
+
+    // Special VEnding Machine
+    private SpecialVendingMachineView specialVM;
 
     /**
      * Constructs a new instance of the NewMainFrame class.
@@ -42,8 +46,10 @@ public class NewMainFrame extends JFrame {
         cardLayout = new CardLayout();
         menu = new MainMenu();
         vendingMachine = new VendingMachine();
-        vendingVMView = new VendingMachineView(vendingMachine);
         maintenanceVM = new MaintenanceView(vendingMachine);
+
+        vendingVMView = new VendingMachineView(vendingMachine);
+        specialVM = new SpecialVendingMachineView(vendingMachine);
 
         // sets our layout as a card layout
         setLayout(cardLayout);
@@ -51,6 +57,7 @@ public class NewMainFrame extends JFrame {
         add(menu, "Main Menu");
         add(vendingVMView, "Vending Features");
         add(maintenanceVM, "Maintenance Feature");
+        add(specialVM, "Special Vending Machine");
 
         menu.createVM(e -> {
             JButton button = (JButton) e.getSource();
@@ -67,21 +74,25 @@ public class NewMainFrame extends JFrame {
 
                 if (choice == JOptionPane.YES_OPTION) {
                     JOptionPane.showMessageDialog(menu, "You Successfully Created a Regular Vending Machine!");
-                    vendingMachine = new VendingMachine();
+                    vendingMachine = new VendingMachine(); // regular
                     this.helperInitializeNames(vendingMachine);
+                    System.out.println("REGULAR INITIALIZED");
                     vendingMachine.initializeMoney();
                     vendingMachine.initializeSlots();
+                    // initialize normal view
                     vendingVMView.setVendingMachine(vendingMachine);
                     vmStatus = true;
                 } else if (choice == JOptionPane.NO_OPTION) {
                     JOptionPane.showMessageDialog(menu, "You Successfully Created a Special Vending Machine!");
-                    vendingMachine = new SpecialVMModel();
+                    vendingMachine = new SpecialVMModel(); // special
                     this.helperInitializeNames(vendingMachine);
-                    System.out.println("nahna");
+                    System.out.println("SPECIAL INITIALIZED");
                     vendingMachine.initializeMoney();
                     vendingMachine.initializeSlots();
-                    maintenanceVM.setVendingMachine(vendingMachine);
+                    // initialize special view
+                    vendingVMView.setVendingMachine(vendingMachine);
                     vmStatus = true;
+                    svmStatus = true;
                 }
             }
         });
@@ -100,18 +111,24 @@ public class NewMainFrame extends JFrame {
                             options[0]);
 
                     if (choice == JOptionPane.YES_OPTION) {
-                        
-                        vendingVMView.setVendingMachine(this.vendingMachine);
-                        for (int i=0; i<9; i++) {
-                            System.out.println(i + "ITEM- " + vendingVMView.getVendingMachine().getItemSlot().get(i).getDesignatedItem().getName());
+
+                        if (!svmStatus) {
+                            vendingVMView.setVendingMachine(this.vendingMachine);
+                            vendingVMView.refreshButtons();
+                            menu.setVisible(false);
+                            vendingVMView.setVisible(true);
+                            this.vendingMachine = vendingVMView.getVendingMachine();
+
+                        } else {
+                            specialVM.setVendingMachine(this.vendingMachine);
+                            specialVM.refreshButtons();
+                            menu.setVisible(false);
+                            specialVM.setVisible(true);
+                            this.vendingMachine = vendingVMView.getVendingMachine();
                         }
-                        vendingVMView.refreshButtons(); 
-                        menu.setVisible(false);
-                        vendingVMView.setVisible(true);
-                        this.vendingMachine = vendingVMView.getVendingMachine();
                     } else if (choice == JOptionPane.NO_OPTION) {
                         maintenanceVM.setVendingMachine(vendingMachine);
-                        vendingVMView.refreshButtons(); 
+                        vendingVMView.refreshButtons();
                         menu.setVisible(false);
                         maintenanceVM.setVisible(true);
                         this.vendingMachine = maintenanceVM.getVendingMachine();
@@ -124,12 +141,20 @@ public class NewMainFrame extends JFrame {
             }
         });
 
-
         vendingVMView.backButton(e -> {
             JButton button = (JButton) e.getSource();
             String buttonLabel = button.getText();
             if (buttonLabel.equals("Cancel")) {
                 vendingVMView.setVisible(false);
+                menu.setVisible(true);
+            }
+        });
+
+        specialVM.backButton(e -> {
+            JButton button = (JButton) e.getSource();
+            String buttonLabel = button.getText();
+            if (buttonLabel.equals("Cancel")) {
+                specialVM.setVisible(false);
                 menu.setVisible(true);
             }
         });
@@ -142,7 +167,6 @@ public class NewMainFrame extends JFrame {
                 menu.setVisible(true);
             }
         });
-
 
         addComponentListener(new ComponentAdapter() {
             @Override
@@ -163,12 +187,10 @@ public class NewMainFrame extends JFrame {
     }
 
     public void helperInitializeNames(VendingMachine vendingMachine) {
-        int i=0;
+        int i = 0;
         for (SlotModel temp : vendingMachine.getItemSlot()) {
             temp.setSlotName(String.valueOf(i));
             i++;
         }
     }
 }
-
-
