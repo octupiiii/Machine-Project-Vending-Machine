@@ -1,10 +1,12 @@
-import View.MainFrame;
+
+import Controller.NewMainFrame;
 
 import javax.swing.*;
 
 public class Driver {
     public static void main(String[] args) {
-        // runs in AWT thread
-        SwingUtilities.invokeLater(MainFrame::new);
+        SwingUtilities.invokeLater(() -> {
+            new NewMainFrame();
+        });
     }
 }

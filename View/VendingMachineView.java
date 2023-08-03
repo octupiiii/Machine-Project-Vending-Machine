@@ -1,21 +1,28 @@
 package View;
 
 import javax.swing.*;
+
+import Model.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class VendingMachineView extends JPanel {
 
+    private VendingMachine vendingMachine;
     private JButton backButton;
+    private JTextField totalAmountField;
+    private double totalAmount = 0.0;
 
-    public VendingMachineView() {
+    public VendingMachineView(VendingMachine vendingMachine) {
+        this.vendingMachine = vendingMachine;
         setLayout(new BorderLayout());
 
         // Panel 1: Uneditable Text Field
-        JPanel uneditableTextPanel = createUneditableTextPanel();
-        uneditableTextPanel.setBorder(BorderFactory.createTitledBorder("Uneditable Text Field"));
-        add(uneditableTextPanel, BorderLayout.NORTH);
+        JPanel displayAmountPanel = createTotalAmountPanel();
+        displayAmountPanel.setBorder(BorderFactory.createTitledBorder("Uneditable Text Field"));
+        add(displayAmountPanel, BorderLayout.NORTH);
 
         // Panel 2: Main Panel (for Buttons)
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -33,17 +40,19 @@ public class VendingMachineView extends JPanel {
         add(mainPanel, BorderLayout.CENTER);
 
         // Panel 3: Black Panel
+        JPanel centerButtonPanel = createCenterButtonPanel();
         JPanel blackPanel = new JPanel();
         backButton = new JButton("Cancel"); // Use the class-level backButton variable
+        blackPanel.add(centerButtonPanel);
         blackPanel.add(backButton); // Add the backButton to the blackPanel
         add(blackPanel, BorderLayout.SOUTH);
+
     }
 
-    private JPanel createUneditableTextPanel() {
-        JPanel panel = new JPanel();
-        JTextField textField = new JTextField("This is an uneditable text field", 20);
-        textField.setEditable(false);
-        panel.add(textField);
+    private JPanel createCenterButtonPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Center-align the button
+        JButton centerButton = new JButton("Special Ice Cream");
+        panel.add(centerButton);
         return panel;
     }
 
@@ -57,13 +66,35 @@ public class VendingMachineView extends JPanel {
 
         // Add 9 buttons to the panel
         for (int i = 1; i <= 9; i++) {
-            JButton button = new JButton("Button " + i);
+            String itemName = vendingMachine.getItemSlot().get(i - 1).getDesignatedItem().getName() + i;
+            JButton button = new JButton(itemName);
             button.addActionListener(new ButtonActionListener());
             panel.add(button);
         }
 
         return panel;
     }
+
+    // private JPanel createPanelWithButtons() {
+    // JPanel panel = new JPanel();
+    // panel.setLayout(new GridLayout(3, 3));
+
+    // for (int i = 0; i < vendingMachine.getItemSlot().size(); i++) {
+    // System.out.print("hi");
+    // SlotModel slot = vendingMachine.getItemSlot().get(i);
+    // JButton button;
+    // if (slot.getDesignatedItem().getName() != null) {
+    // button = new JButton(slot.getDesignatedItem().getName()); // Use the itemname
+    // as the button text
+    // } else {
+    // button = new JButton(String.valueOf(i));
+    // }
+    // button.addActionListener(new ButtonActionListener());
+    // panel.add(button);
+    // }
+
+    // return panel;
+    // }
 
     private JPanel createMoneyButtons() {
         JPanel panel = new JPanel();
@@ -81,7 +112,7 @@ public class VendingMachineView extends JPanel {
         return panel;
     }
 
-    private static class MoneyButtonActionListener implements ActionListener {
+    private class MoneyButtonActionListener implements ActionListener {
         private final double denomination;
 
         public MoneyButtonActionListener(double denomination) {
@@ -105,37 +136,79 @@ public class VendingMachineView extends JPanel {
                     options[0]);
 
             if (choice == JOptionPane.YES_OPTION) {
+                // update Total amount
+                totalAmount += denomination;
+                System.out.println("HELLO  " + vendingMachine.getItemSlot().get(4).getDesignatedItem().getName());
                 // If "Add Item" is clicked, show another JOptionPane to inform the user
                 JOptionPane.showMessageDialog(null, "Item added with denomination: " + buttonText, "Item Added",
                         JOptionPane.INFORMATION_MESSAGE);
+                totalAmountField.setText("Total Amount: PHP " + String.format("%.2f", totalAmount));
+
             }
         }
     }
 
-    private static class ButtonActionListener implements ActionListener {
+    private JPanel createTotalAmountPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+
+        totalAmountField = new JTextField("Total Amount: PHP 0.00", 15);
+        totalAmountField.setEditable(false);
+        panel.add(totalAmountField);
+
+        return panel;
+    }
+
+    private class ButtonActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             // Handle button click action here
             JButton button = (JButton) e.getSource();
             String buttonText = button.getText();
+            int index = Integer.parseInt(buttonText) - 1;
 
-            // Customize the JOptionPane options
-            Object[] options = { "Add Item", "Close" };
-            int choice = JOptionPane.showOptionDialog(null,
-                    "Button clicked: " + buttonText,
-                    "Button Clicked",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
+            // Check if the index is within the bounds of the list
+            if (index >= 0 && index < vendingMachine.getItemSlot().size()) {
+                // Customize the JOptionPane options
+                Object[] options = { "Buy", "Cancel" };
+                int choice = JOptionPane.showOptionDialog(null,
+                        "Button clicked: " + buttonText,
+                        "Button Clicked",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
 
-            if (choice == JOptionPane.YES_OPTION) {
-                // If "Add Item" is clicked, show another JOptionPane to inform the user
-                JOptionPane.showMessageDialog(null, "Item added: " + buttonText, "Item Added",
-                        JOptionPane.INFORMATION_MESSAGE);
+                if (choice == JOptionPane.YES_OPTION) {
+                    // Process the purchase
+                    ItemModel item = vendingMachine.getItemSlot().get(index).getDesignatedItem();
+                    if (item != null) {
+                        double itemPrice = item.getPrice();
+                        if (totalAmount >= itemPrice) {
+                            totalAmount -= itemPrice;
+                            totalAmountField.setText("Total Amount: PHP " + String.format("%.2f", totalAmount));
+                            // Update the button text to show that the item is sold
+                            button.setText(buttonText + " (Sold)");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Insufficient funds. Please insert more money.",
+                                    "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } else {
+                        // Item is not available in the vending machine
+                        JOptionPane.showMessageDialog(null, "Item not available.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
             }
         }
+    }
+
+    public void setVendingMachine(VendingMachine vendingMachine) {
+        this.vendingMachine = vendingMachine;
+    }
+
+    public VendingMachine getVendingMachine() {
+        return this.vendingMachine;
     }
 
 }

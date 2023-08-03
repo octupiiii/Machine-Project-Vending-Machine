@@ -3,22 +3,26 @@ package View;
 import javax.swing.*;
 
 import Model.*;
-import Controller.VMController;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MaintenanceView extends JPanel {
 
-    private VendingMachine vendingMachine = new VendingMachine();
+    private VendingMachine vendingMachine;
     private JButton backButton;
     private JTextField totalAmountField;
     private double totalAmount = 0.0;
+    private Map<JButton, ItemModel> buttonItemMap;
 
-    public MaintenanceView() {
+    public MaintenanceView(VendingMachine vendingMachine) {
         setLayout(new BorderLayout());
         vendingMachine.initializeSlots();
+        buttonItemMap = new HashMap<>();
+
         // Panel 1: Uneditable Text Field
         JPanel displayAmountPanel = createTotalAmountPanel();
         displayAmountPanel.setBorder(BorderFactory.createTitledBorder("Uneditable Text Field"));
@@ -67,6 +71,8 @@ public class MaintenanceView extends JPanel {
             JButton button = new JButton(Integer.toString(i));
             button.addActionListener(new ButtonActionListener());
             panel.add(button);
+
+            buttonItemMap.put(button, null);
         }
 
         return panel;
@@ -249,5 +255,21 @@ public class MaintenanceView extends JPanel {
             }
         }
 
+        private void updateButtonWithItem(JButton button, ItemModel tempItem) {
+            // Update the button text to the item name
+            button.setText(tempItem.getName());
+
+            // Store the corresponding ItemModel in the map
+            buttonItemMap.put(button, tempItem);
+        }
+
+    }
+
+    public void setVendingMachine(VendingMachine vendingMachine) {
+        this.vendingMachine = vendingMachine;
+    }
+
+    public VendingMachine getVendingMachine() {
+        return this.vendingMachine;
     }
 }

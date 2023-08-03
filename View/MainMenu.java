@@ -6,16 +6,26 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 
-import Controller.VMController;
-
+/**
+ * MainMenu class represents the main menu view of the vending machine
+ * application.
+ * It extends JPanel and provides buttons to create a vending machine, test the
+ * vending machine,
+ * and exit the application.
+ */
 public class MainMenu extends JPanel {
 
     private JButton createButton;
     private JButton testButton;
     private JButton exitButton;
 
+    /**
+     * Constructs a new instance of the MainMenu class.
+     * Initializes the main menu view with buttons for creating a vending machine,
+     * testing the vending machine, and exiting the application.
+     * The buttons are added to the panel using GridBagLayout.
+     */
     public MainMenu() {
-
         createButton = new JButton("Create Vending Machine");
         createButton.setPreferredSize(new Dimension(278, 40));
 
@@ -52,20 +62,32 @@ public class MainMenu extends JPanel {
         gridBagConstraints.anchor = GridBagConstraints.WEST;
 
         add(exitButton, gridBagConstraints);
-
     }
 
+    /**
+     * Sets up an action listener for the "Create Vending Machine" button.
+     *
+     * @param actionListener The ActionListener to be triggered on button click.
+     */
     public void createVM(ActionListener actionListener) {
-        createButton.addActionListener(actionListener); // This sets up the ActionListener to be triggered on button
-                                                        // click
+        createButton.addActionListener(actionListener);
     }
 
+    /**
+     * Sets up an action listener for the "Test Vending Machine" button.
+     *
+     * @param actionListener The ActionListener to be triggered on button click.
+     */
     public void testVM(ActionListener actionListener) {
         testButton.addActionListener(actionListener);
     }
 
+    /**
+     * Sets up an action listener for the "Exit" button.
+     *
+     * @param actionListener The ActionListener to be triggered on button click.
+     */
     public void exit(ActionListener actionListener) {
         exitButton.addActionListener(actionListener);
     }
-
 }
