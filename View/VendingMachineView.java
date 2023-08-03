@@ -1,14 +1,16 @@
 package View;
 
 import javax.swing.*;
-
 import Model.*;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+/**
+ * The VendingMachineView class represents the graphical user interface for the
+ * vending machine.
+ */
 public class VendingMachineView extends JPanel {
 
     private VendingMachine vendingMachine;
@@ -18,6 +20,11 @@ public class VendingMachineView extends JPanel {
     private ArrayList<String> tempName;
     private JPanel panel1;
 
+    /**
+     * Constructs a VendingMachineView object with the specified vending machine.
+     *
+     * @param vendingMachine The VendingMachine object to associate with the view.
+     */
     public VendingMachineView(VendingMachine vendingMachine) {
         this.vendingMachine = new VendingMachine();
         this.vendingMachine.initializeSlots();
@@ -64,6 +71,11 @@ public class VendingMachineView extends JPanel {
 
     }
 
+    /**
+     * Creates the center button panel containing the special ice cream button.
+     *
+     * @return The JPanel containing the center button.
+     */
     private JPanel createCenterButtonPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Center-align the button
         JButton centerButton = new JButton("Special Ice Cream");
@@ -71,10 +83,20 @@ public class VendingMachineView extends JPanel {
         return panel;
     }
 
+    /**
+     * Sets the ActionListener for the back button.
+     *
+     * @param actionListener The ActionListener to be set.
+     */
     public void backButton(ActionListener actionListener) {
         backButton.addActionListener(actionListener);
     }
 
+    /**
+     * Creates the panel with product buttons for the vending machine.
+     *
+     * @return The JPanel containing the product buttons.
+     */
     private JPanel createPanelWithButtons() {
         panel1 = new JPanel();
         panel1.setLayout(new GridLayout(3, 3));
@@ -92,6 +114,10 @@ public class VendingMachineView extends JPanel {
         return panel1;
     }
 
+    /**
+     * Updates the names of the product buttons based on the vending machine's item
+     * slots.
+     */
     private void updateButtonNames() {
         for (int i = 0; i < 9; i++) {
             JButton button = (JButton) panel1.getComponent(i);
@@ -104,6 +130,12 @@ public class VendingMachineView extends JPanel {
         }
     }
 
+    /**
+     * Creates the panel with money buttons for inserting money into the vending
+     * machine.
+     *
+     * @return The JPanel containing the money buttons.
+     */
     private JPanel createMoneyButtons() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(2, 5));
@@ -120,6 +152,9 @@ public class VendingMachineView extends JPanel {
         return panel;
     }
 
+    /**
+     * ActionListener for the money buttons to handle money insertion.
+     */
     private class MoneyButtonActionListener implements ActionListener {
         private final double denomination;
 
@@ -150,11 +185,16 @@ public class VendingMachineView extends JPanel {
                 JOptionPane.showMessageDialog(null, "Inserted: " + buttonText, "Money Inserted",
                         JOptionPane.INFORMATION_MESSAGE);
                 totalAmountField.setText("Inserted Money: PHP " + String.format("%.2f", totalAmount));
-
             }
         }
     }
 
+    /**
+     * Creates the panel with the uneditable total amount field for displaying the
+     * total amount.
+     *
+     * @return The JPanel containing the total amount field.
+     */
     private JPanel createTotalAmountPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
@@ -166,10 +206,17 @@ public class VendingMachineView extends JPanel {
         return panel;
     }
 
+    /**
+     * Refreshes the product buttons' names based on the current item slots of the
+     * vending machine.
+     */
     public void refreshButtons() {
         updateButtonNames();
     }
 
+    /**
+     * ActionListener for the product buttons to handle product purchases.
+     */
     private class ButtonActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -254,12 +301,21 @@ public class VendingMachineView extends JPanel {
 
     }
 
+    /**
+     * Sets the VendingMachine object associated with the view.
+     *
+     * @param vendingMachine The VendingMachine object to set.
+     */
     public void setVendingMachine(VendingMachine vendingMachine) {
         this.vendingMachine = vendingMachine;
     }
 
+    /**
+     * Gets the VendingMachine object associated with the view.
+     *
+     * @return The VendingMachine object associated with the view.
+     */
     public VendingMachine getVendingMachine() {
         return this.vendingMachine;
     }
-
 }
